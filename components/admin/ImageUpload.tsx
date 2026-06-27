@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState } from "react";
-import Image from "next/image";
 import { ConfirmModal } from "@/components/admin/ConfirmModal";
 import {
   IMAGE_UPLOAD_ACCEPT,
@@ -33,6 +32,11 @@ export function ImageUpload({ value, onChange, onError }: Props) {
 
       if (normalized.size > 5 * 1024 * 1024) {
         onError?.("Bestand te groot (max 5MB)");
+        return;
+      }
+
+      if (normalized.size === 0) {
+        onError?.("Afbeelding kon niet worden verwerkt");
         return;
       }
 
@@ -77,7 +81,12 @@ export function ImageUpload({ value, onChange, onError }: Props) {
     <div className="space-y-3">
       {value && (
         <div className="relative h-32 w-32 overflow-hidden rounded-lg border border-espresso/10 shadow-sm">
-          <Image src={value} alt="Preview" fill className="object-cover" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={value}
+            alt="Preview"
+            className="h-full w-full object-cover"
+          />
         </div>
       )}
 
