@@ -1,3 +1,5 @@
+const MAX_CLIENT_DIMENSION = 2048;
+
 function isHeicFile(file: Pick<File, "name" | "type">): boolean {
   if (file.type === "image/heic" || file.type === "image/heif") {
     return true;
@@ -36,25 +38,76 @@ async function convertWithHeic2any(file: File): Promise<File> {
   return new File([blob], name, { type: "image/jpeg" });
 }
 
-async function reencodeViaCanvas(file: File): Promise<File> {
-  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+function fitDimensions(
+  width: number,
+  height: number,
+  maxDimension: number,
+): { width: number; height: number } {
+  if (width <= maxDimension && height <= maxDimension) {
+    return { width, height };
+  }
 
-  if (bitmap.width === 0 || bitmap.height === 0) {
-    bitmap.close();
+  const scale = maxDimension / Math.max(width, height);
+  return {
+    width: Math.max(1, Math.round(width * scale)),
+    height: Math.max(1, Math.round(height * scale)),
+  };
+}
+
+async function loadImageSource(
+  file: File,
+): Promise<{ source: CanvasImageSource; width: number; height: number; cleanup: () => void }> {
+  try {
+    const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+    return {
+      source: bitmap,
+      width: bitmap.width,
+      height: bitmap.height,
+      cleanup: () => bitmap.close(),
+    };
+  } catch {
+    const objectUrl = URL.createObjectURL(file);
+    try {
+      const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error("Afbeelding kon niet worden geladen"));
+        img.src = objectUrl;
+      });
+
+      return {
+        source: image,
+        width: image.naturalWidth,
+        height: image.naturalHeight,
+        cleanup: () => URL.revokeObjectURL(objectUrl),
+      };
+    } catch (error) {
+      URL.revokeObjectURL(objectUrl);
+      throw error;
+    }
+  }
+}
+
+async function reencodeViaCanvas(file: File): Promise<File> {
+  const { source, width, height, cleanup } = await loadImageSource(file);
+
+  if (width === 0 || height === 0) {
+    cleanup();
     throw new Error("Ongeldige afbeelding");
   }
 
   try {
+    const fitted = fitDimensions(width, height, MAX_CLIENT_DIMENSION);
     const canvas = document.createElement("canvas");
-    canvas.width = bitmap.width;
-    canvas.height = bitmap.height;
+    canvas.width = fitted.width;
+    canvas.height = fitted.height;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) {
       throw new Error("Afbeelding kon niet worden verwerkt");
     }
 
-    ctx.drawImage(bitmap, 0, 0);
+    ctx.drawImage(source, 0, 0, fitted.width, fitted.height);
 
     const blob = await new Promise<Blob>((resolve, reject) => {
       canvas.toBlob(
@@ -63,14 +116,18 @@ async function reencodeViaCanvas(file: File): Promise<File> {
             ? resolve(result)
             : reject(new Error("Afbeelding kon niet worden geconverteerd")),
         "image/jpeg",
-        0.92,
+        0.9,
       );
     });
+
+    if (blob.size === 0) {
+      throw new Error("Afbeelding kon niet worden geconverteerd");
+    }
 
     const baseName = file.name.replace(/\.[^.]+$/, "") || "image";
     return new File([blob], `${baseName}.jpg`, { type: "image/jpeg" });
   } finally {
-    bitmap.close();
+    cleanup();
   }
 }
 

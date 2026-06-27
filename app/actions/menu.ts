@@ -188,7 +188,7 @@ export async function uploadMenuImage(formData: FormData): Promise<string> {
 
   const { error } = await supabase.storage
     .from("menu-images")
-    .upload(fileName, buffer, { contentType, upsert: false });
+    .upload(fileName, new Uint8Array(buffer), { contentType, upsert: false });
 
   if (error) throw new Error(error.message);
 

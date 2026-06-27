@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     const { error } = await supabase.storage
       .from("menu-images")
-      .upload(fileName, buffer, { contentType, upsert: false });
+      .upload(fileName, new Uint8Array(buffer), { contentType, upsert: false });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
