@@ -3,6 +3,11 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { ConfirmModal } from "@/components/admin/ConfirmModal";
+import {
+  IMAGE_UPLOAD_ACCEPT,
+  isAllowedMenuImage,
+} from "@/lib/image/allowedMenuImage";
+import { normalizeImageFile } from "@/lib/image/normalizeImageFile";
 
 type Props = {
   value: string | null;
@@ -17,21 +22,22 @@ export function ImageUpload({ value, onChange, onError }: Props) {
   const [confirmRemove, setConfirmRemove] = useState(false);
 
   async function uploadFile(file: File) {
-    if (file.size > 5 * 1024 * 1024) {
-      onError?.("Bestand te groot (max 5MB)");
-      return;
-    }
-
-    const allowed = ["image/jpeg", "image/png", "image/webp"];
-    if (!allowed.includes(file.type)) {
-      onError?.("Alleen JPEG, PNG of WebP toegestaan");
+    if (!isAllowedMenuImage(file)) {
+      onError?.("Alleen JPEG, PNG, WebP of HEIC toegestaan");
       return;
     }
 
     setUploading(true);
     try {
+      const normalized = await normalizeImageFile(file);
+
+      if (normalized.size > 5 * 1024 * 1024) {
+        onError?.("Bestand te groot (max 5MB)");
+        return;
+      }
+
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", normalized);
 
       const res = await fetch("/api/admin/upload", {
         method: "POST",
@@ -91,7 +97,7 @@ export function ImageUpload({ value, onChange, onError }: Props) {
         <input
           ref={inputRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept={IMAGE_UPLOAD_ACCEPT}
           onChange={handleFileSelect}
           disabled={uploading}
           className="sr-only"
@@ -106,7 +112,7 @@ export function ImageUpload({ value, onChange, onError }: Props) {
               Sleep een afbeelding hierheen
             </p>
             <p className="mb-3 text-xs text-espresso-soft">
-              JPEG, PNG of WebP · max 5MB · wordt gecomprimeerd
+              JPEG, PNG, WebP of HEIC · max 5MB · wordt gecomprimeerd
             </p>
             <label
               htmlFor="menu-image-upload"

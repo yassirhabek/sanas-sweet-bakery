@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession } from "@/lib/auth";
+import { isAllowedMenuImage } from "@/lib/image/allowedMenuImage";
 import { compressMenuImage } from "@/lib/image/compressMenuImage";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const MAX_SIZE = 5 * 1024 * 1024;
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export async function POST(request: NextRequest) {
   const isAuthenticated = await verifySession(request);
@@ -31,9 +31,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!ALLOWED_TYPES.includes(file.type)) {
+  if (!isAllowedMenuImage(file)) {
     return NextResponse.json(
-      { error: "Ongeldig bestandstype (JPEG, PNG of WebP)" },
+      { error: "Ongeldig bestandstype (JPEG, PNG, WebP of HEIC)" },
       { status: 400 },
     );
   }

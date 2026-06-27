@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { compressMenuImage } from "@/lib/image/compressMenuImage";
+import { isAllowedMenuImage } from "@/lib/image/allowedMenuImage";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Category, MenuItem } from "@/lib/supabase/types";
 import {
@@ -176,8 +177,7 @@ export async function uploadMenuImage(formData: FormData): Promise<string> {
   const maxSize = 5 * 1024 * 1024;
   if (file.size > maxSize) throw new Error("File too large (max 5MB)");
 
-  const allowed = ["image/jpeg", "image/png", "image/webp"];
-  if (!allowed.includes(file.type)) {
+  if (!isAllowedMenuImage(file)) {
     throw new Error("Invalid file type");
   }
 
