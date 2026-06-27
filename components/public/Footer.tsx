@@ -1,5 +1,4 @@
 import { getLocale, getTranslations } from "next-intl/server";
-import { Link } from "@/i18n/navigation";
 import { Clock, MapPin } from "lucide-react";
 import { getTodayHours } from "@/lib/hours";
 import {
@@ -13,7 +12,6 @@ import { ZelligePattern } from "./ZelligeBorder";
 export async function Footer() {
   const locale = await getLocale();
   const t = await getTranslations("footer");
-  const tNav = await getTranslations("nav");
   const tContact = await getTranslations("contact");
   const tCommon = await getTranslations("common");
   const [todayHours, contact] = await Promise.all([
@@ -22,13 +20,6 @@ export async function Footer() {
   ]);
 
   const address = getAddressForLocale(contact, locale);
-
-  const links = [
-    { href: "/", label: tNav("home") },
-    { href: "/menu", label: tNav("menu") },
-    { href: "/about", label: tNav("about") },
-    { href: "/contact", label: tNav("contact") },
-  ] as const;
 
   return (
     <footer className="relative mt-auto overflow-hidden bg-espresso text-cream">
@@ -54,53 +45,33 @@ export async function Footer() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-6 sm:gap-8 lg:col-span-7 lg:grid-cols-3">
-            <div className="hidden md:block">
-              <p className="mb-2 text-[10px] font-semibold tracking-widest text-gold/80 uppercase sm:mb-3 sm:text-xs">
-                {t("navigation")}
-              </p>
-              <ul className="grid grid-cols-2 gap-1.5 sm:gap-2">
-                {links.map((link) => (
-                  <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      className="flex min-h-[40px] items-center rounded-lg bg-cream/5 px-3 text-sm text-cream/80 transition-colors hover:bg-cream/10 hover:text-gold-light sm:min-h-[44px]"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="col-span-2 grid grid-cols-2 gap-4 sm:gap-5 lg:col-span-2">
-              <div className="flex gap-2.5 sm:gap-3">
-                <MapPin
-                  className="mt-0.5 shrink-0 text-terracotta"
-                  size={16}
-                />
-                <div className="min-w-0">
-                  <p className="text-[10px] font-semibold tracking-widest text-gold/80 uppercase sm:text-xs">
-                    {tContact("address")}
-                  </p>
-                  <p className="mt-1 text-xs leading-relaxed text-cream/75 sm:text-sm">
-                    {address}
-                  </p>
-                </div>
+          <div className="grid grid-cols-2 gap-4 sm:gap-5 lg:col-span-7">
+            <div className="flex gap-2.5 sm:gap-3">
+              <MapPin
+                className="mt-0.5 shrink-0 text-terracotta"
+                size={16}
+              />
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold tracking-widest text-gold/80 uppercase sm:text-xs">
+                  {tContact("address")}
+                </p>
+                <p className="mt-1 text-xs leading-relaxed text-cream/75 sm:text-sm">
+                  {address}
+                </p>
               </div>
-              <div className="flex gap-2.5 sm:gap-3">
-                <Clock
-                  className="mt-0.5 shrink-0 text-terracotta"
-                  size={16}
-                />
-                <div>
-                  <p className="text-[10px] font-semibold tracking-widest text-gold/80 uppercase sm:text-xs">
-                    {t("hoursToday")}
-                  </p>
-                  <p className="mt-1 text-xs font-medium text-cream sm:text-sm">
-                    {todayHours}
-                  </p>
-                </div>
+            </div>
+            <div className="flex gap-2.5 sm:gap-3">
+              <Clock
+                className="mt-0.5 shrink-0 text-terracotta"
+                size={16}
+              />
+              <div>
+                <p className="text-[10px] font-semibold tracking-widest text-gold/80 uppercase sm:text-xs">
+                  {t("hoursToday")}
+                </p>
+                <p className="mt-1 text-xs font-medium text-cream sm:text-sm">
+                  {todayHours}
+                </p>
               </div>
             </div>
           </div>

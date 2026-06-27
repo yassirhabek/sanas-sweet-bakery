@@ -78,28 +78,30 @@ export default async function HomePage({ params }: Props) {
         </div>
       </section>
 
-      <section className="page-container py-12 sm:py-20 md:py-28">
-        <SectionHeading
-          title={t("featuredTitle")}
-          subtitle={t("featuredSubtitle")}
-        />
-        <StaggerChildren className="mt-10 grid gap-6 sm:mt-14 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
-          {featured.map((item) => (
-            <StaggerItem key={item.id}>
-              <ProductCard
-                item={item}
-                locale={locale}
-                featuredLabel={tMenu("featuredBadge")}
-                formattedPrice={
-                  item.price != null
-                    ? tMenu("price", { price: item.price.toFixed(2) })
-                    : undefined
-                }
-              />
-            </StaggerItem>
-          ))}
-        </StaggerChildren>
-      </section>
+      {featured.length > 0 && (
+        <section className="page-container py-12 sm:py-20 md:py-28">
+          <SectionHeading
+            title={t("featuredTitle")}
+            subtitle={t("featuredSubtitle")}
+          />
+          <StaggerChildren className="mt-10 grid gap-6 sm:mt-14 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
+            {featured.map((item) => (
+              <StaggerItem key={item.id}>
+                <ProductCard
+                  item={item}
+                  locale={locale}
+                  featuredLabel={tMenu("featuredBadge")}
+                  formattedPrice={
+                    item.price != null
+                      ? tMenu("price", { price: item.price.toFixed(2) })
+                      : undefined
+                  }
+                />
+              </StaggerItem>
+            ))}
+          </StaggerChildren>
+        </section>
+      )}
 
       <section className="gradient-warm border-y border-gold/10 py-12 sm:py-20 md:py-24">
         <div className="page-container">

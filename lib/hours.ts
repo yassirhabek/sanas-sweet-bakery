@@ -99,103 +99,6 @@ const FALLBACK_WEEKLY: OpeningHours[] = [
   { day_of_week: 6, open_time: null, close_time: null, is_closed: true },
 ];
 
-const FALLBACK_CATEGORIES: CategoryWithItems[] = [
-  {
-    id: "1",
-    name_nl: "Brood",
-    name_en: "Bread",
-    sort_order: 0,
-    icon: "wheat",
-    menu_items: [
-      {
-        id: "1",
-        category_id: "1",
-        name_nl: "Khobz",
-        name_en: "Khobz",
-        description_nl: "Traditioneel Marokkaans rondbrood, dagelijks vers gebakken.",
-        description_en: "Traditional Moroccan round bread, baked fresh daily.",
-        price: 2.5,
-        image_url:
-          "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600",
-        sort_order: 0,
-        is_featured: true,
-      },
-      {
-        id: "2",
-        category_id: "1",
-        name_nl: "Msemen",
-        name_en: "Msemen",
-        description_nl: "Gelaagd flatbrood, knapperig van buiten en zacht van binnen.",
-        description_en: "Layered flatbread, crispy outside and soft inside.",
-        price: 3.0,
-        image_url:
-          "https://images.unsplash.com/photo-1619535854729-0b764f4cfc4e?w=600",
-        sort_order: 1,
-        is_featured: true,
-      },
-    ],
-  },
-  {
-    id: "2",
-    name_nl: "Gebak",
-    name_en: "Pastries",
-    sort_order: 1,
-    icon: "croissant",
-    menu_items: [
-      {
-        id: "3",
-        category_id: "2",
-        name_nl: "Chebakia",
-        name_en: "Chebakia",
-        description_nl:
-          "Honingzoete bloemkoekjes met sesamzaad, een Ramadan-specialiteit.",
-        description_en:
-          "Honey-sweet flower cookies with sesame seeds, a Ramadan specialty.",
-        price: 1.5,
-        image_url:
-          "https://images.unsplash.com/photo-1558961363-fa8fdf0db814?w=600",
-        sort_order: 0,
-        is_featured: true,
-      },
-      {
-        id: "4",
-        category_id: "2",
-        name_nl: "Briouat",
-        name_en: "Briouat",
-        description_nl: "Krokante filodeegpakketjes gevuld met amandelpasta.",
-        description_en: "Crispy phyllo parcels filled with almond paste.",
-        price: 2.0,
-        image_url:
-          "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600",
-        sort_order: 1,
-        is_featured: false,
-      },
-    ],
-  },
-  {
-    id: "3",
-    name_nl: "Taarten",
-    name_en: "Cakes",
-    sort_order: 2,
-    icon: "cake-slice",
-    menu_items: [
-      {
-        id: "5",
-        category_id: "3",
-        name_nl: "Meskouta",
-        name_en: "Meskouta",
-        description_nl: "Lichte Marokkaanse citroencake, perfect bij de thee.",
-        description_en: "Light Moroccan lemon cake, perfect with tea.",
-        price: 18.0,
-        image_url:
-          "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600",
-        sort_order: 0,
-        is_featured: false,
-      },
-    ],
-  },
-];
-
 export async function getWeeklyHours(): Promise<OpeningHours[]> {
   if (!isSupabaseConfigured()) return FALLBACK_WEEKLY;
 
@@ -238,11 +141,7 @@ export async function getAllSpecialHours(): Promise<SpecialHours[]> {
 }
 
 export async function getFeaturedItems(): Promise<MenuItem[]> {
-  if (!isSupabaseConfigured()) {
-    return FALLBACK_CATEGORIES.flatMap((c) => c.menu_items).filter(
-      (i) => i.is_featured,
-    );
-  }
+  if (!isSupabaseConfigured()) return [];
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -251,16 +150,12 @@ export async function getFeaturedItems(): Promise<MenuItem[]> {
     .eq("is_featured", true)
     .order("sort_order");
 
-  if (error || !data?.length) {
-    return FALLBACK_CATEGORIES.flatMap((c) => c.menu_items).filter(
-      (i) => i.is_featured,
-    );
-  }
+  if (error || !data) return [];
   return data as MenuItem[];
 }
 
 export async function getMenuWithCategories(): Promise<CategoryWithItems[]> {
-  if (!isSupabaseConfigured()) return FALLBACK_CATEGORIES;
+  if (!isSupabaseConfigured()) return [];
 
   const supabase = await createClient();
   const { data: categories, error: catError } = await supabase
@@ -268,14 +163,14 @@ export async function getMenuWithCategories(): Promise<CategoryWithItems[]> {
     .select("*")
     .order("sort_order");
 
-  if (catError || !categories?.length) return FALLBACK_CATEGORIES;
+  if (catError || !categories) return [];
 
   const { data: items, error: itemError } = await supabase
     .from("menu_items")
     .select("*")
     .order("sort_order");
 
-  if (itemError) return FALLBACK_CATEGORIES;
+  if (itemError) return [];
 
   return (categories as CategoryWithItems[]).map((cat) => ({
     ...cat,
