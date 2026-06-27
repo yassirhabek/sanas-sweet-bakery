@@ -4,6 +4,10 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { compressMenuImage } from "@/lib/image/compressMenuImage";
 import { isAllowedMenuImage } from "@/lib/image/allowedMenuImage";
+import {
+  deleteMenuImageByUrl,
+  deleteMenuImagesByUrl,
+} from "@/lib/image/menuImageStorage";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Category, MenuItem } from "@/lib/supabase/types";
 import {
@@ -84,6 +88,15 @@ export async function saveCategory(
 export async function deleteCategory(id: string) {
   await requireAdmin();
   const supabase = createAdminClient();
+
+  const { data: items, error: itemsError } = await supabase
+    .from("menu_items")
+    .select("image_url")
+    .eq("category_id", id);
+  if (itemsError) throw new Error(itemsError.message);
+
+  await deleteMenuImagesByUrl((items ?? []).map((item) => item.image_url));
+
   const { error } = await supabase.from("categories").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePublic();
@@ -139,6 +152,19 @@ export async function saveMenuItem(
   };
 
   if (item.id) {
+    const { data: existing, error: existingError } = await supabase
+      .from("menu_items")
+      .select("image_url")
+      .eq("id", item.id)
+      .single();
+    if (existingError) throw new Error(existingError.message);
+
+    const previousImageUrl = existing?.image_url ?? null;
+    const nextImageUrl = item.image_url ?? null;
+    if (previousImageUrl && previousImageUrl !== nextImageUrl) {
+      await deleteMenuImageByUrl(previousImageUrl);
+    }
+
     const { error } = await supabase
       .from("menu_items")
       .update(payload)
@@ -164,6 +190,16 @@ export async function saveMenuItem(
 export async function deleteMenuItem(id: string) {
   await requireAdmin();
   const supabase = createAdminClient();
+
+  const { data: item, error: itemError } = await supabase
+    .from("menu_items")
+    .select("image_url")
+    .eq("id", id)
+    .single();
+  if (itemError) throw new Error(itemError.message);
+
+  await deleteMenuImageByUrl(item?.image_url);
+
   const { error } = await supabase.from("menu_items").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePublic();
